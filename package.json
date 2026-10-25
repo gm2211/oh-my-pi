@@ -3,7 +3,7 @@
   "homepage": "https://omp.sh",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.4",
   "patchedDependencies": {
     "@ark/schema@0.56.2": "patches/@ark%2Fschema@0.56.2.patch",
     "puppeteer-core@25.3.0": "patches/puppeteer-core@25.3.0.patch"
@@ -79,7 +79,9 @@
     }
   },
   "overrides": {
-    "@ark/schema": "0.56.2"
+    "@ark/schema": "0.56.2",
+    "adm-zip": "0.6.1",
+    "sharp": "0.35.5"
   },
   "scripts": {
     "setup": "bun install && bun run build:native && bun --cwd=packages/coding-agent link && sh scripts/link-omp.sh",
