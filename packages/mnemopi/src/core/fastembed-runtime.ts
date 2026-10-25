@@ -10,6 +10,7 @@ import {
 } from "@oh-my-pi/pi-utils";
 import type * as Fastembed from "fastembed";
 import packageManifest from "../../package.json" with { type: "json" };
+import fastembedTarPatch from "../../patches/fastembed@2.1.0.patch" with { type: "text" };
 
 type FastembedModule = typeof Fastembed;
 
@@ -36,12 +37,27 @@ export interface FastembedRuntimeInstallPlan {
  */
 const FASTEMBED_SPEC = packageManifest.peerDependencies.fastembed;
 
+/**
+ * fastembed 2.1.0 declares `tar ^6.2.0`, whose hardlink/symlink path-traversal
+ * and parser-DoS advisories are fixed only in tar 7.5.x. The runtime cache
+ * forces tar 7 (matching the workspace root `overrides`) and applies the same
+ * patch the workspace root's `patchedDependencies` applies
+ * (`packages/mnemopi/patches/fastembed@2.1.0.patch`), which switches fastembed
+ * from tar 6's default export to tar 7's named `x` export.
+ */
+const FASTEMBED_TAR_SPEC = "7.5.22";
+
 /** Build the deterministic fastembed runtime install plan used by local embeddings. */
 export function fastembedRuntimeInstallPlan(): FastembedRuntimeInstallPlan {
 	return {
-		versionKey: `fastembed-${FASTEMBED_SPEC}_transitive-ort`.replace(/[^A-Za-z0-9._-]/g, "_"),
+		versionKey: `fastembed-${FASTEMBED_SPEC}_transitive-ort_tar-${FASTEMBED_TAR_SPEC}`.replace(
+			/[^A-Za-z0-9._-]/g,
+			"_",
+		),
 		install: {
 			dependencies: { fastembed: FASTEMBED_SPEC },
+			overrides: { tar: FASTEMBED_TAR_SPEC },
+			patchedDependencies: { [`fastembed@${FASTEMBED_SPEC}`]: fastembedTarPatch },
 			trustedDependencies: ["onnxruntime-node"],
 		},
 	};

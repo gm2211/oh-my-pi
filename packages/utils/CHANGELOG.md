@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added `patchedDependencies` to `RuntimeInstallSpec`, so a runtime install can apply bun patches; `writeRuntimeManifest` writes each patch under the runtime directory's `patches/`.
+
 ## [17.2.15] - 2026-08-12
 
 ### Changed

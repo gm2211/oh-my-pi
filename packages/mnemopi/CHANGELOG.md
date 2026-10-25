@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Moved fastembed's model-archive extraction from tar 6.2.1 to tar 7.5.22, clearing tar 6's 12 advisories (path traversal through hardlinks and symlinks, and parser DoS; GHSA-23hp-3jrh-7fpw is critical). fastembed 2.1.0 is patched to use tar 7's named `x` export, and the on-demand runtime install used by the bundle and compiled binary gets the same tar pin and patch under a new cache key (`fastembed-2.1.0_transitive-ort_tar-7.5.22`), so it installs fresh once.
+
 ## [17.2.11] - 2026-08-07
 
 ### Fixed
