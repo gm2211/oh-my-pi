@@ -238,4 +238,29 @@ describe("writeRuntimeManifest", () => {
 		const empty = await readManifest({ dependencies: { "kokoro-js": "1.2.1" }, overrides: {} });
 		expect("overrides" in empty).toBe(false);
 	});
+
+	test("writes patch files beside the manifest and points patchedDependencies at them", async () => {
+		const dir = await fs.mkdtemp(path.join(os.tmpdir(), "omp-runtime-manifest-"));
+		tempDirs.push(dir);
+		const diff = "diff --git a/index.js b/index.js\n";
+		const scopedDiff = "diff --git a/lib/x.js b/lib/x.js\n";
+		await writeRuntimeManifest(dir, {
+			dependencies: { fastembed: "2.1.0" },
+			patchedDependencies: { "fastembed@2.1.0": diff, "@scope/pkg@1.0.0": scopedDiff },
+		});
+		const manifest = JSON.parse(await fs.readFile(path.join(dir, "package.json"), "utf8")) as {
+			patchedDependencies?: Record<string, string>;
+		};
+		expect(manifest.patchedDependencies).toEqual({
+			"fastembed@2.1.0": "patches/fastembed@2.1.0.patch",
+			"@scope/pkg@1.0.0": "patches/@scope%2Fpkg@1.0.0.patch",
+		});
+		expect(await fs.readFile(path.join(dir, "patches/fastembed@2.1.0.patch"), "utf8")).toBe(diff);
+		expect(await fs.readFile(path.join(dir, "patches/@scope%2Fpkg@1.0.0.patch"), "utf8")).toBe(scopedDiff);
+	});
+
+	test("omits patchedDependencies when no patches are provided", async () => {
+		const manifest = await readManifest({ dependencies: { "kokoro-js": "1.2.1" }, patchedDependencies: {} });
+		expect("patchedDependencies" in manifest).toBe(false);
+	});
 });

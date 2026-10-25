@@ -43,6 +43,12 @@ declare module "*.bdf" {
 	export default content;
 }
 
+// Dependency patches shipped as text (e.g. mnemopi's fastembed runtime install).
+declare module "*.patch" {
+	const content: string;
+	export default content;
+}
+
 // Session-export template assets imported as text (coding-agent src/export/html).
 // No `*.html` declaration: bun-types claims that pattern as HTMLBundle, so the
 // text import casts at the use site instead.

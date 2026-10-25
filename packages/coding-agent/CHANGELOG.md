@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Updated `puppeteer-core` from 25.3.0 to 25.15.0, which moves `chromium-bidi` to 157.0.8090-0 on zod 4 and clears zod 3.25.76's GHSA-mrhx-c7xc-m3w5. The stealth patch is re-derived as `patches/puppeteer-core@25.15.0.patch` with every hunk kept; its swallowed CDP errors now go through puppeteer's per-instance logger, because 25.13 removed the module-level `debugError`/`debugCatchError` helpers. It also drops 25.15.0's two new default `--disable-features` entries (`WebUIOmniboxPopup`, `WebUIOmniboxAimPopup`), keeping the "user-supplied features only" rule.
+
 ## [17.2.15] - 2026-08-12
 
 ### Added

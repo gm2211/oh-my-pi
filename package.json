@@ -6,7 +6,8 @@
   "packageManager": "bun@1.4.4",
   "patchedDependencies": {
     "@ark/schema@0.56.2": "patches/@ark%2Fschema@0.56.2.patch",
-    "puppeteer-core@25.3.0": "patches/puppeteer-core@25.3.0.patch"
+    "fastembed@2.1.0": "packages/mnemopi/patches/fastembed@2.1.0.patch",
+    "puppeteer-core@25.15.0": "patches/puppeteer-core@25.15.0.patch"
   },
   "workspaces": {
     "packages": [
@@ -65,7 +66,7 @@
       "onnxruntime-node": "1.26.0",
       "postcss": "^8.5.16",
       "prettier": "^3.9.5",
-      "puppeteer-core": "25.3.0",
+      "puppeteer-core": "25.15.0",
       "react": "19.2.7",
       "react-chartjs-2": "^5.3.1",
       "react-dom": "19.2.7",
@@ -81,7 +82,8 @@
   "overrides": {
     "@ark/schema": "0.56.2",
     "adm-zip": "0.6.1",
-    "sharp": "0.35.5"
+    "sharp": "0.35.5",
+    "tar": "7.5.22"
   },
   "scripts": {
     "setup": "bun install && bun run build:native && bun --cwd=packages/coding-agent link && sh scripts/link-omp.sh",

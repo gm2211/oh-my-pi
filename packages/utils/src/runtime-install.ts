@@ -285,6 +285,12 @@ export interface RuntimeInstallSpec {
 	dependencies: Record<string, string>;
 	/** Version pins forced across the whole runtime tree (bun `overrides`), e.g. dislodging a transitive dep. */
 	overrides?: Record<string, string>;
+	/**
+	 * Patches bun applies to installed packages (bun `patchedDependencies`):
+	 * `name@version` → unified diff text. Each diff is written under the
+	 * runtime directory's `patches/` so the install can find it.
+	 */
+	patchedDependencies?: Record<string, string>;
 	/** Packages whose lifecycle scripts bun may run during the install. */
 	trustedDependencies?: string[];
 }
@@ -332,6 +338,18 @@ export async function writeRuntimeManifest(runtimeDir: string, install: RuntimeI
 		dependencies: install.dependencies,
 	};
 	if (install.overrides && Object.keys(install.overrides).length) manifest.overrides = install.overrides;
+	const patches = Object.entries(install.patchedDependencies ?? {});
+	if (patches.length) {
+		const patchedDependencies: Record<string, string> = {};
+		await fsp.mkdir(path.join(runtimeDir, "patches"), { recursive: true });
+		for (const [spec, diff] of patches) {
+			// Same file naming as `bun patch --commit` (`@scope/name` → `@scope%2Fname`).
+			const relative = `patches/${spec.replaceAll("/", "%2F")}.patch`;
+			await Bun.write(path.join(runtimeDir, relative), diff);
+			patchedDependencies[spec] = relative;
+		}
+		manifest.patchedDependencies = patchedDependencies;
+	}
 	if (install.trustedDependencies?.length) manifest.trustedDependencies = install.trustedDependencies;
 	await Bun.write(path.join(runtimeDir, "package.json"), `${JSON.stringify(manifest, null, "\t")}\n`);
 }

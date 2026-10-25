@@ -1,13 +1,15 @@
 /**
  * Regression test for issue #5296: the stealth `puppeteer-core` patch
- * (`patches/puppeteer-core@25.3.0.patch`) re-implements world acquisition
+ * (`patches/puppeteer-core@<version>.patch`) re-implements world acquisition
  * without `Runtime.enable`. Its new catch handlers in `FrameManager` called the
  * bare `debugError` logger, which puppeteer leaves `undefined` when the
  * `puppeteer:error` debug channel is disabled (the default). A transient CDP
  * failure during world re-acquire then threw `TypeError: debugError is not a
  * function` from `#doAcquireWorlds`, escaped as an `unhandledRejection`, and the
  * postmortem handler killed the whole OMP process (parent session + every
- * subagent).
+ * subagent). Since puppeteer-core 25.13 the module-level helpers are gone and
+ * the patch logs through the FrameManager's own logger (the default `debug`,
+ * which likewise returns no sink while the channel is off).
  *
  * The test drives the real patched `FrameManager` with a `send()` that always
  * rejects (a mid-flight CDP failure) and asserts the acquire path emits no
@@ -26,9 +28,9 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { CdpFrame } from "puppeteer-core/lib/puppeteer/cdp/Frame.js";
 import { FrameManager } from "puppeteer-core/lib/puppeteer/cdp/FrameManager.js";
 import { MAIN_WORLD, PUPPETEER_WORLD } from "puppeteer-core/lib/puppeteer/cdp/IsolatedWorlds.js";
+import { DEBUG_PREFIXES, debug } from "puppeteer-core/lib/puppeteer/common/Debug.js";
 import { EventEmitter } from "puppeteer-core/lib/puppeteer/common/EventEmitter.js";
 import { TimeoutSettings } from "puppeteer-core/lib/puppeteer/common/TimeoutSettings.js";
-import { debugError } from "puppeteer-core/lib/puppeteer/common/util.js";
 
 const ACQUIRE_TIMEOUT_MS = 40;
 
@@ -57,7 +59,7 @@ function makeFrameManager(session: RejectingSession): FrameManager {
 	// The patched FrameManager only touches the members exercised here; the
 	// puppeteer-internal `CdpCDPSession` / `CdpPage` types are far wider than the
 	// acquire path needs, so the doubles cross the boundary with a cast.
-	return new FrameManager(session as never, page as never, timeoutSettings);
+	return new FrameManager(session as never, page as never, timeoutSettings, debug);
 }
 
 describe("stealth FrameManager world acquire — issue #5296", () => {
@@ -73,16 +75,16 @@ describe("stealth FrameManager world acquire — issue #5296", () => {
 		process.off("unhandledRejection", onUnhandled);
 	});
 
-	it("keeps disabled debugError undefined so bare calls would crash", () => {
+	it("keeps the disabled error channel sink undefined so bare calls would crash", () => {
 		// The precondition that makes the bug fatal: with the puppeteer:error
-		// channel off, the logger the patch used is not callable.
-		expect(debugError).toBeUndefined();
+		// channel off, the default logger hands back no callable sink.
+		expect(debug(DEBUG_PREFIXES.error)).toBeUndefined();
 	});
 
 	it("does not emit an unhandled TypeError when acquire fails mid-flight", async () => {
 		const session = new RejectingSession("S1");
 		const frameManager = makeFrameManager(session);
-		const frame = new CdpFrame(frameManager, "F1", undefined, session as never);
+		const frame = new CdpFrame(frameManager, "F1", undefined, session as never, debug);
 		frameManager._frameTree.addFrame(frame);
 
 		// Navigation installs the lazy context providers and invalidates the old
